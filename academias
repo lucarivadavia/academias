@@ -1,0 +1,230 @@
+academias
+
+ #include <iostream>
+ #include "listasstr.h"
+ 
+ typedef struct
+ {
+ 	char nome[80];
+ 	char telefone[12];
+ 	char email[70];
+ 	char peso[5];
+	char altura[5];
+	char restricao[500];
+	char idade[3];
+	char sexo[15];
+	int status;
+ } registro;
+ 
+ void cadastra(FILE *);
+ void consulta(FILE *);
+ int tamarq(FILE *);
+ void relatorio(FILE *);
+ void relatorioord(FILE *);
+ void inativar(FILE *);
+ 
+ int main(void)
+ {
+	setlocale(LC_ALL, "");
+   FILE *arq;
+   arq = fopen("dados.dat","rb+");
+   if (arq==0)//arquiva nao existe no disco ou nao pode ser aberto
+   {
+   	arq= fopen("dados.dat","wb+");
+   }
+   int op;
+   do 
+   {
+   		system("cls");
+   		printf("============= Academia NotCrossfit =============\n");
+   		printf("1.Novo Cadastro\n");
+   		printf("2.Consultar Cadastro\n");
+   		printf("3.Gerar arquivo\n");
+   		printf("4.Gerar arquivo ordenado\n");
+   		printf("5.Inativar cadastro\n");
+   		printf("6.Sair\n");
+   		printf("======================================\n");
+   		printf("         Cadastrados: %d              \n", tamarq(arq));
+   		printf("Sua opcao:");
+   		scanf("%d",&op);
+   		fflush(stdin);
+   		switch (op)
+   		{
+   			case 1:
+			   	cadastra(arq);
+			   	break;
+			case 2:
+				consulta(arq);
+				break;
+			case 3:
+				relatorio(arq);
+			    break;
+			case 4:
+				relatorioord(arq);
+				break;
+			case 5:
+				inativar(arq);
+				break;	
+		}
+   		
+   }while (op!=6);
+   fclose(arq);
+   return 1;	
+ }
+ 
+ void cadastra(FILE *arq)
+ {
+ 	char confirma;
+	 printf("Cadastrando o registro numero:%d\n",tamarq(arq)+1);
+ 	registro reg;
+
+	printf("Nome.........................:");
+ 	gets(reg.nome);
+ 	printf("Idade........................:");
+ 	gets(reg.idade);
+ 	printf("Sexo (M / F / I).............:");
+ 	gets(reg.sexo);
+ 	printf("Peso.........................:");
+	gets(reg.peso);
+	printf("Altura.......................:");
+	gets(reg.altura);
+	printf("Restriçôes médicas...........:");
+	gets(reg.restricao);
+ 	printf("Telefone.....................:");
+ 	gets(reg.telefone);
+ 	printf("e-mail.......................:");
+ 	gets(reg.email);
+ 	reg.status=1;
+ 	
+ 	
+ 	printf("\nConfirma <s/n>:");
+	scanf("%c", &confirma);
+
+
+	if (toupper(confirma) == 'S')
+	{
+		printf("\n gravando ....\n");
+		fseek(arq, 0, SEEK_END);
+		fwrite(&reg, sizeof(registro), 1, arq);
+		printf("Cadastro gravado!");
+		
+
+	}
+ 	system("pause");
+ }
+ 
+ void consulta(FILE *arq)
+ {
+ 	int nr;
+	printf("Entre com o numero do registro:");
+	scanf("%d",&nr);
+	fflush(stdin);
+	registro reg;
+	fseek(arq,(nr-1)*sizeof(registro),SEEK_SET);
+	fread(&reg,sizeof(registro),1,arq);
+	
+	printf("Nome.....:%s\n",reg.nome);
+	printf("Sexo........: %s\n", reg.sexo);
+	printf("Idade........: %s anos\n", reg.idade);
+	printf("Peso....:%s Kg\n", reg.peso);
+	printf("Altura....: %s metros\n", reg.altura);
+	printf("Restrições....: %s\n", reg.restricao);
+	printf("Telefone.: %s\n",reg.telefone);
+	printf("e-mail...: %s\n",reg.email);
+	if(reg.status==1)
+		printf("Conta Ativa\n");
+	else
+		printf("Conta Inativa\n");	
+	
+	system("pause");
+ 	
+ }
+
+void relatorio(FILE *arq)
+{
+	FILE *arqtxt=fopen("Matriculas.txt","w");
+	fprintf(arqtxt,"Relaçao de cadastrados\n");
+	fprintf(arqtxt,"Nome                           Sexo      Idade      Altura  Peso    Telefone            e-mail								      Restrições\n");
+	fprintf(arqtxt,"===============================================================================================================================================================================\n");
+	int nr;
+	registro reg;
+	for (nr=0;nr<tamarq(arq);nr++)
+	{
+		if (reg.status==1)
+		{
+		fseek(arq,nr*sizeof(registro),SEEK_SET);
+		fread(&reg,sizeof(registro),1,arq);
+		fprintf(arqtxt,"%-30s %-9s %-10s %-7s %-7s %-19s %-70s %-500s\n",reg.nome,reg.sexo,reg.idade,reg.altura,reg.peso,reg.telefone,reg.email,reg.restricao);
+		}
+	}
+	fprintf(arqtxt,"===============================================================================================================================================================================\n");
+	fclose(arqtxt);
+	printf("Relatorio gerado com sucesso.\n");
+	system("Pause");
+}
+
+void relatorioord(FILE *arq)
+{
+	Lista L;
+	Linit(&L);
+	int nr;
+	registro reg;
+	Elem X;
+	for (nr=0;nr<tamarq(arq);nr++)
+	{
+		fseek(arq,nr*sizeof(registro),SEEK_SET);
+		fread(&reg,sizeof(registro),1,arq);
+		strcpy(X.nome,reg.nome);
+		X.nr=nr;
+		Lins(&L,X);
+	}
+	FILE *arqtxt=fopen("Matriculas_Ordenadas.txt","w");
+	fprintf(arqtxt,"Relaçao de cadastrados\n");
+	fprintf(arqtxt,"Nome                           Sexo      Idade      Altura  Peso    Telefone            e-mail								      Restrições\n");
+	fprintf(arqtxt,"===============================================================================================================================================================================\n");
+	int c;
+	for (c=0;c<tamarq(arq);c++)
+	{
+		if (reg.status==1)
+		{
+		nr=L.M[c].nr;
+		fseek(arq,nr*sizeof(registro),SEEK_SET);
+		fread(&reg,sizeof(registro),1,arq);
+		fprintf(arqtxt,"%-30s %-9s %-10s %-7s %-7s %-19s %-70s %-500s\n",reg.nome,reg.sexo,reg.idade,reg.altura,reg.peso,reg.telefone,reg.email,reg.restricao);
+		}	
+	}
+	fprintf(arqtxt,"===============================================================================================================================================================================\n");
+	fclose(arqtxt);
+	printf("Relatorio gerado com sucesso.\n");
+	system("Pause");
+	
+}
+
+void inativar(FILE *arq)
+{
+	int nr;
+	printf("Entre com o numero do registro:");
+	scanf("%d",&nr);
+	fflush(stdin);
+	registro reg;
+	fseek(arq,(nr-1)*sizeof(registro),SEEK_SET);
+	fread(&reg,sizeof(registro),1,arq);
+	
+	reg.status=0;
+	
+	printf("Conta inativada!\n");
+	printf("Limite pra reativação: 90 dias\n");
+	system("pause");
+}
+ 
+ int tamarq(FILE *arq)
+ {
+ 	fseek(arq,0,SEEK_END);
+ 	return ftell(arq)/sizeof(registro);
+ }
+ 
+
+ 
+ 
+ 
+ 
